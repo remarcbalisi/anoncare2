@@ -1,0 +1,10 @@
+/migrations/*
+db.sqlite3
+*.py[co]
+.sass-cache
+venv/
+.idea/
+/app/*.pyc
+/app/models.py
+*.idea/ 
+*.pyc
