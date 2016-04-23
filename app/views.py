@@ -1,10 +1,16 @@
-#!flask/bin/python
+# !flask/bin/python
 import os
 from os import sys
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request, session, redirect
+from functools import wraps
+# from flask.ext.httpauth import HTTPBasicAuth
+from os import sys
 from models import DBconn
 import json, flask
 from app import app
+import re
+import hashlib, uuid
+
 
 
 def spcall(qry, param, commit=False):
@@ -57,15 +63,6 @@ def user_exists(username):
         return False
 
 
-@app.route('/anoncare.api/userexists/<string:username>/', methods=['GET'])
-def jsonify_user_exists(username):
-    exists = user_exists(username)
-
-    print "exists,", exists
-
-    return jsonify({"exists": exists})
-
-
 @app.route('/anoncare.api/users/<int:id>/', methods=['GET'])
 def get_user_with_id(id):
     res = spcall("getuserinfoid", (id,), True)
@@ -103,11 +100,6 @@ def register_field_empty(fname, mname, lname, email):
         return False
 
 
-@app.route('/anoncare.api/check_field/<string:fname>/<string:mname>/<string:lname>/<string:email>/', methods=['GET'])
-def jsonify_register_field_empty(fname, mname, lname, email):
-    return jsonify({"is_empty": register_field_empty(fname, mname, lname, email)})
-
-
 def invalid_email(email):
     match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
 
@@ -116,13 +108,6 @@ def invalid_email(email):
 
     else:
         return False
-
-
-@app.route('/anoncare.api/user/emailverfication/<string:email>/', methods=['GET'])
-def email_verif(email):
-    invalid = invalid_email(email)
-    print "invalid is,", invalid
-    return jsonify({"invalid": invalid})
 
 
 def hash_password(password):
