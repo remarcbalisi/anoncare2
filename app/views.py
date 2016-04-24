@@ -7,6 +7,7 @@ import json, flask
 from app import app
 import hashlib, uuid
 import re
+from werkzeug.security import generate_password_hash
 
 
 
@@ -47,7 +48,17 @@ def store_user():
 
             if fname != '' and mname != '' and lname != '' and username != '' and password != '' and role_id != '':
                 # new user is verified unique and has a valid mail. User can be store
-                return jsonify({'status':'OK'})
+
+                #hash password using "Salted Passwords" source: http://flask.pocoo.org/snippets/54/
+                pw_hash = generate_password_hash(password)
+
+                store_user = spcall('store_user', (fname, mname, lname, username, pw_hash, email, role_id), True )
+
+                if store_user[0][0] == 'OK':
+                    return jsonify({'status':'OK', 'message':'Successfully add ' + str(fname)})
+
+                elif store_user[0][0] == 'Error':
+                    return jsonify({'status':'failed', 'message':'failed to add ' + str(fname)})
 
             else:
                 return jsonify({'status':'failed', 'message':'Please input required fields!'})

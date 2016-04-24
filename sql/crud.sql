@@ -69,3 +69,18 @@ create or replace function check_mail(in par_mail text) returns text as
     end;
   $$
   language 'plpgsql';
+
+--------------------- STORE USER IN DATABASE
+create or replace function store_user(in par_fname text, in par_mname text, in par_lname text, in par_username text, in par_password text, in par_email text, in par_role_id int8) returns text as
+  $$ declare local_response text;
+    begin
+
+      insert into Userinfo(fname, mname, lname, username, password, email, role_id, is_available) values (par_fname, par_mname, par_lname, par_username, par_password, par_email, par_role_id, 'True');
+      local_response = 'OK';
+      return local_response;
+
+    end;
+  $$
+  language 'plpgsql';
+
+select store_user('remarc', 'espinosa', 'balisi', 'apps-user', 'admin', 'remarc.balisi@gmail.com', 2);
