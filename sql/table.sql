@@ -3,7 +3,12 @@ CREATE TABLE Role (
   rolename TEXT
 );
 
-
+-- User is a key word, so the psql parser gets confused when you try to do:
+-- create table user
+-- but 
+-- create table "user" (...
+-- will work. All references to the table will have to be in quotes as well.
+-- FWIW, I'd use a different table name. e.g. yoyodyne_user.
 CREATE TABLE Userinfo (
   id           SERIAL8 PRIMARY KEY,
   fname        TEXT        NOT NULL,
@@ -15,4 +20,3 @@ CREATE TABLE Userinfo (
   role_id      INT REFERENCES Role (id),
   is_available BOOLEAN
 );
-

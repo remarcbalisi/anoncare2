@@ -1,15 +1,12 @@
 # !flask/bin/python
 import os
-from os import sys
-from flask import Flask, jsonify, render_template, request, session, redirect
-from functools import wraps
-# from flask.ext.httpauth import HTTPBasicAuth
+from flask import Flask, jsonify, request
 from os import sys
 from models import DBconn
 import json, flask
 from app import app
-import re
 import hashlib, uuid
+import re
 
 
 
@@ -27,9 +24,45 @@ def spcall(qry, param, commit=False):
     return res
 
 
-@app.route('/', methods=['GET'])
-def index():
-	return jsonify({'hello':'hello world!'})
+@app.route('/api/anoncare/user', methods=['POST'])
+def store_user():
+
+    data = json.loads(request.data)
+    username = data['username']
+    email = data['email']
+
+    check_username_exist = spcall('check_username', (username,) )
+    check_email_exist = spcall('check_mail', (email,) )
+
+    if check_username_exist[0][0] == 'OK' and check_email_exist[0][0] == 'OK':
+
+        check_mail = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
+
+        if check_mail:
+            fname = data['fname']
+            mname = data['mname']
+            lname = data['lname']
+            password = data['password']
+            role_id = data['role_id']
+
+            if fname != '' and mname != '' and lname != '' and username != '' and password != '' and role_id != '':
+                # new user is verified unique and has a valid mail. User can be store
+                return jsonify({'status':'OK'})
+
+            else:
+                return jsonify({'status':'failed', 'message':'Please input required fields!'})
+
+        else:
+            return jsonify({'status':'failed', 'message':'Invalid email input!'})
+
+    elif check_username_exist[0][0] == 'EXISTED':
+        return jsonify({'status ':'failed', 'message':'username already exist'})
+
+    elif check_email_exist[0][0] == 'EXISTED':
+        return jsonify({'status ':'failed', 'message':'email already exist'})
+
+    else:
+        return jsonify({'failed':'failed'})
 
 
 @app.after_request
@@ -43,117 +76,3 @@ def add_cors(resp):
     if app.debug:
         resp.headers["Access-Control-Max-Age"] = '1'
     return resp
-
-
-
-def user_exists(username):
-    users = spcall('getuserinfo', ())
-    index = 0
-    count = 0
-
-    for user in users:
-        if username == users[index][4]:
-            count += 1
-
-        index += 1
-
-    if count == 1:
-        return True
-    else:
-        return False
-
-
-@app.route('/anoncare.api/users/<int:id>/', methods=['GET'])
-def get_user_with_id(id):
-    res = spcall("getuserinfoid", (id,), True)
-    entries = []
-
-    print "res is ", len(res)
-
-    if len(res) != 0:
-        row = res[0]
-        entries.append({
-            "fname": row[0],
-            "mname": row[1],
-            "lname": row[2],
-            "email": row[3],
-            "username": row[4]})
-
-        print "username is ", res[0][4]
-
-        return jsonify({"status": "OK", "message": "OK", "entries": entries})
-
-    else:
-        return jsonify({"status": "OK", "message": "No User Found"})
-
-
-def register_field_empty(fname, mname, lname, email):
-    if fname == '':
-        return True
-    if mname =='':
-        return True
-    if lname == '':
-        return True
-    if email == '':
-        return True
-    else:
-        return False
-
-
-def invalid_email(email):
-    match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
-
-    if match == None:
-        return True
-
-    else:
-        return False
-
-
-def hash_password(password):
-    salt = uuid.uuid4().hex
-    hashed = hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ':' + salt
-    return hashed
-    # return hashlib.sha256(salt.enode() + password.encode()).hexdigest() + ':' + salt
-
-
-@app.route('/anoncare.api/user/', methods=['POST'])
-def insertuser():
-    user = json.loads(request.data)
-
-    print "user is ", user
-
-    fname = user['fname']
-    mname = user['mname']
-    lname = user['lname']
-    email = user['email']
-    username = user['username']
-    password = user['password']
-    role_id = user['role_id']
-    is_available = user['is_available']
-
-    if register_field_empty(str(fname), str(mname), str(lname), str(email)):
-        return jsonify({'message': 'Empty Field'})
-
-    elif invalid_email(email):
-        return jsonify({'email': 'Invalid!'})
-
-    elif user_exists(username):
-        return jsonify({'status': 'error'})
-    else:
-        # hashed_password = hashlib.md5(password)
-        # saved_password = hashed_password.hexdigest()
-        # password = str(password)
-        saved_password = hash_password(password)
-        spcall("newuserinfo", (fname, mname, lname, email, username, saved_password, role_id, is_available), True)
-        return jsonify({'status': 'OK'})
-
-
-@app.route('/anoncare.api/password_reset/', methods=['PUT'])
-def password_reset():
-    id = 3
-    input_password = json.loads(request.data)
-    new_password = input_password['password']
-    spcall("updatepassword", (id, new_password,), True)
-
-    return jsonify({"status": "Password Changed"})
