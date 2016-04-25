@@ -70,6 +70,27 @@ create or replace function check_mail(in par_mail text) returns text as
   $$
   language 'plpgsql';
 
+
+------------------------CHECKING USERNAME AND PASSWORD CREDENTIALS IN LOGGIN IN USER
+create or replace function check_credentials(in par_username text, in par_password text) returns text as
+  $$ declare local_response text; local_id bigint;
+    begin
+
+      select into local_id id from Userinfo where username = par_username and password = par_password;
+
+      if local_id isnull then
+        local_response = 'failed';
+      else
+        local_response = 'OK';
+      end if;
+
+      return local_response;
+
+    end;
+  $$
+  language 'plpgsql';
+
+
 --------------------- STORE USER IN DATABASE
 create or replace function store_user(in par_fname text, in par_mname text, in par_lname text, in par_username text, in par_password text, in par_email text, in par_role_id int8) returns text as
   $$ declare local_response text;

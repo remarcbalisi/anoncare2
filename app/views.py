@@ -1,13 +1,14 @@
 # !flask/bin/python
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session, redirect, url_for
 from os import sys
 from models import DBconn
 import json, flask
 from app import app
-import hashlib, uuid
 import re
 from werkzeug.security import generate_password_hash
+from functools import wraps
+import hashlib
 
 
 
@@ -23,6 +24,64 @@ def spcall(qry, param, commit=False):
     except:
         res = [("Error: " + str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1]),)]
     return res
+
+
+def login_required(test):
+    @wraps(test)
+    def wrap(*args, **kwargs):
+        if 'logged_in' in session:
+            return test(*args, **kwargs)
+
+        else:
+            return redirect(url_for('login') )
+
+    return wrap
+
+
+@app.route('/api/anoncare/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('index') )
+
+
+@app.route('/api/anoncare/login', methods=['POST', 'GET'])
+def login():
+
+    try:
+
+        if session['logged_in']:
+            return redirect(url_for('home') )
+
+    except:
+
+        if request.method == 'POST':
+            credentials = json.loads(request.data)
+            username = credentials['username']
+            password = credentials['password']
+            pw_hash = hashlib.md5(password.encode())
+
+            check_credentials = spcall('check_credentials', (username, pw_hash.hexdigest() ))
+            #if failed it will return 'FAILED' and if not return 'OK'
+
+            if check_credentials[0][0] == 'failed':
+                return jsonify({'status':'failed', 'message':'Invalid credentials please try again'})
+
+            else:
+                session['logged_in'] = True
+                return redirect(url_for('home') )
+
+        return jsonify({'status':'guest'})
+
+
+@app.route('/api/anoncare/index')
+def index():
+    return jsonify({'status':'guest'})
+
+
+@app.route('/api/anoncare/home')
+@login_required
+def home():
+    return jsonify({'status':'check'})
 
 
 @app.route('/api/anoncare/user', methods=['POST'])
@@ -47,18 +106,28 @@ def store_user():
             role_id = data['role_id']
 
             if fname != '' and mname != '' and lname != '' and username != '' and password != '' and role_id != '':
-                # new user is verified unique and has a valid mail. User can be store
+                """
+                PASSWORD HASHING
+                source: https://pythonprogramming.net/password-hashing-flask-tutorial/
 
-                #hash password using "Salted Passwords" source: http://flask.pocoo.org/snippets/54/
-                pw_hash = generate_password_hash(password)
+                import hashlib
+                password = 'pa$$w0rd'
+                h = hashlib.md5(password.encode())
+                print(h.hexdigest())
 
-                store_user = spcall('store_user', (fname, mname, lname, username, pw_hash, email, role_id), True )
+                """
+                pw_hash = hashlib.md5(password.encode())
+
+                store_user = spcall('store_user', (fname, mname, lname, username, pw_hash.hexdigest(), email, role_id), True )
 
                 if store_user[0][0] == 'OK':
                     return jsonify({'status':'OK', 'message':'Successfully add ' + str(fname)})
 
                 elif store_user[0][0] == 'Error':
                     return jsonify({'status':'failed', 'message':'failed to add ' + str(fname)})
+
+                else:
+                    return jsonify({'ERROR':'404'})
 
             else:
                 return jsonify({'status':'failed', 'message':'Please input required fields!'})
