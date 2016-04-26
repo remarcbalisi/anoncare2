@@ -33,13 +33,13 @@ CREATE TABLE Personal_info (
   mname            TEXT,
   lname            TEXT,
   age              INT,
-  sex_id           INT REFERENCES Sex (id),
+  sex_id           INT REFERENCES Sex (school_id),
   department_id    INT REFERENCES Department (id),
-  patient_type_id  INT REFERENCES Patient_type (id),
+  patient_type_id  INT REFERENCES Patient_type (school_id),
   height           TEXT,
   weight           FLOAT,
-  date_of_birth    TIMESTAMP,
-  civil_status_id  INT REFERENCES Civil_status(id),
+  date_of_birth    DATE,
+  civil_status_id  INT REFERENCES Civil_status(school_id),
   name_of_guardian TEXT,
   home_address     TEXT
 );
@@ -103,6 +103,7 @@ CREATE TABLE Neurologic (
 CREATE TABLE Patient (
   school_id        SERIAL8 PRIMARY KEY,
   personal_info_id INT REFERENCES Personal_info (school_id),
+  personal_history_id INT REFERENCES Personal_history(school_id),
   pulmonary_id     INT REFERENCES Pulmonary (school_id),
   gut_id           INT REFERENCES Gut (school_id),
   illness_id       INT REFERENCES Illness (school_id),
