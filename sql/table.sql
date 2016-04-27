@@ -11,19 +11,10 @@ CREATE TABLE Department (
   is_active       BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE Sex(
-  school_id int8 PRIMARY KEY,
-  type    TEXT
-);
 
 CREATE TABLE Patient_type (
   school_id   SERIAL8 PRIMARY KEY,
   type TEXT
-);
-
-CREATE TABLE Civil_status(
-  school_id    SERIAL8 PRIMARY KEY,
-  status       TEXT
 );
 
 
@@ -33,13 +24,13 @@ CREATE TABLE Personal_info (
   mname            TEXT,
   lname            TEXT,
   age              INT,
-  sex_id           INT REFERENCES Sex (school_id),
+  sex_id           TEXT,
   department_id    INT REFERENCES Department (id),
   patient_type_id  INT REFERENCES Patient_type (school_id),
   height           TEXT,
   weight           FLOAT,
   date_of_birth    DATE,
-  civil_status_id  INT REFERENCES Civil_status(school_id),
+  civil_status     TEXT,  
   name_of_guardian TEXT,
   home_address     TEXT
 );

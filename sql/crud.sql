@@ -1,15 +1,13 @@
 CREATE OR REPLACE FUNCTION store_patient(par_schoolId           INT, par_fname TEXT, par_mname  TEXT, par_lname TEXT, par_age INT, 
-                                      par_sex_id                INT, par_department_id          INT, par_patient_type_id INT, par_height TEXT, par_weight          FLOAT, 
-                                      par_date_of_birth         DATE, par_civil_status_id       INT, par_name_of_guardian TEXT, par_home_address TEXT, par_smoking TEXT,
+                                      par_sex                   TEXT, par_department_id          INT, par_patient_type_id INT, par_height TEXT, par_weight          FLOAT, 
+                                      par_date_of_birth         DATE, par_civil_status          TEXT, par_name_of_guardian TEXT, par_home_address TEXT, par_smoking TEXT,
                                       par_allergies             TEXT, par_alcohol               TEXT, par_medicationstaken TEXT, par_drugs        TEXT, par_cough   TEXT, 
                                       par_dyspnea               TEXT, par_hemoptysis            TEXT, par_tb_exposure TEXT, par_frequency TEXT, par_flank_plan      TEXT, 
                                       par_discharge             TEXT, par_dysuria               TEXT, par_nocturia TEXT, par_dec_urine_amount TEXT,  par_asthma     TEXT, 
                                       par_ptb                   TEXT, par_heart_problem         TEXT, par_hepatitis_a_b TEXT, par_chicken_pox TEXT,  par_mumps      TEXT,
                                       par_typhoid_fever         TEXT, par_chest_pain            TEXT, par_palpitations TEXT, par_pedal_edema TEXT,  par_orthopnea   TEXT,
                                       par_nocturnal_dyspnea     TEXT, par_headache              TEXT, par_seizure TEXT, par_dizziness TEXT, par_loss_of_consciousness TEXT,
-                                      par_is_active BOOLEAN)
-                                       
-  RETURNS TEXT AS
+                                      par_is_active BOOLEAN) RETURNS TEXT AS
 $$
 DECLARE
   loc_fname TEXT;
@@ -21,15 +19,15 @@ DECLARE
 BEGIN
 
   SELECT INTO loc_id school_id
-  FROM Personal_info, Personal_history, Pulmonary, Gut, Illness, Cardiac, Neurologic, Patient
+  FROM Personal_info
   WHERE school_id = par_schoolId;
   
   SELECT INTO loc_fname fname
   FROM Personal_info
   WHERE fname = par_fname AND mname = par_mname AND lname = par_lname;
-  IF par_schoolId ISNULL OR par_fname = '' OR par_mname = '' OR par_lname = '' OR par_age ISNULL OR par_sex_id = ISNULL OR
-     par_department_id ISNULL OR par_patient_type_id ISNULL OR par_height = '' OR par_weight ISNULL OR par_date_of_birth = '' OR
-     par_civil_status_id = ISNULL OR  par_name_of_guardian = '' OR par_home_address = '' OR par_smoking = '' OR par_allergies = '' OR
+  IF par_schoolId ISNULL OR par_fname = '' OR par_mname = '' OR par_lname = '' OR par_age ISNULL OR par_sex = '' OR
+     par_department_id ISNULL OR par_patient_type_id ISNULL OR par_height = '' OR par_weight ISNULL OR par_date_of_birth ISNULL OR
+     par_civil_status = '' OR  par_name_of_guardian = '' OR par_home_address = '' OR par_smoking = '' OR par_allergies = '' OR
      par_alcohol = '' OR par_medicationstaken = '' OR par_drugs = '' OR par_cough = '' OR par_dyspnea = '' OR par_hemoptysis = '' OR
      par_tb_exposure = '' OR par_frequency = '' OR par_flank_plan = '' OR par_discharge = '' OR par_dysuria = '' OR
      par_nocturia = '' OR par_dec_urine_amount = '' OR par_asthma = '' OR par_ptb = '' OR par_heart_problem = '' OR
@@ -41,8 +39,8 @@ BEGIN
   ELSIF
     loc_fname ISNULL AND loc_id ISNULL
     THEN
-      INSERT INTO Personal_info (school_id, fname, mname, lname,  age, sex_id, department_id, patient_type_id, height, weight, date_of_birth, civil_status_id, name_of_guardian, home_address)
-      VALUES (par_schoolId, par_fname, par_mname, par_lname, par_age, par_sex_id, par_department_id, par_patient_type_id, par_height, par_weight, par_date_of_birth, par_civil_status, par_name_of_guardian, par_home_address);
+      INSERT INTO Personal_info (school_id, fname, mname, lname,  age, sex, department_id, patient_type_id, height, weight, date_of_birth, civil_status, name_of_guardian, home_address)
+      VALUES (par_schoolId, par_fname, par_mname, par_lname, par_age, par_sex_id, par_department_id, par_patient_type_id, par_height, par_weight, par_date_of_birth, par_civil_status_id, par_name_of_guardian, par_home_address);
       INSERT INTO Personal_history (school_id, smoking, allergies, alcohol, medication_taken, drugs)
       VALUES (par_schoolId, par_smoking, par_allergies, par_alcohol, par_medicationstaken, par_drugs);
       INSERT INTO Pulmonary (school_id, cough, dyspnea, hemoptysis, tb_exposure)
@@ -68,21 +66,73 @@ $$
 LANGUAGE 'plpgsql';
 
 
+-- Select * from store_patient('2013-1288', 'David', 'Lopez', 'Guzman', 20, 1, 1, 1, '5 ft 5 inches' , 50 'January 30, 1996', 1, 'Maria Lopez', 'Davao City', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', TRUE);
 
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+CREATE OR REPLACE FUNCTION show_patient(IN par_schoolId INT, out TEXT, out TEXT, out TEXT, out INT,
+								        out TEXT, out INT, out INT, out TEXT, out FLOAT,  
+								        out DATE, out TEXT, out TEXT, out TEXT, out TEXT,  
+								        out TEXT, out TEXT, out TEXT, out TEXT, out TEXT, 
+  										out TEXT, out TEXT, out TEXT, out TEXT, out TEXT,  
+  										out TEXT, out TEXT, out TEXT, out TEXT, out TEXT, 
+  										out TEXT, out TEXT, out TEXT, out TEXT, out TEXT,
+  										out TEXT, out  TEXT, out TEXT, out TEXT, out TEXT, 
+  										out TEXT, out TEXT, out TEXT, out TEXT, out TEXT) RETURNS SETOF RECORD AS
+$$
 
+SELECT
+    Patient.school_id, 
+	Personal_info.fname,
+	Personal_info.mname,
+	Personal_info.lname,
+	Personal_info.age,
+	Personal_info.sex_id,
+	Personal_info.department_id,
+	Personal_info.patient_type_id,
+	Personal_info.height,
+	Personal_info.weight,
+	Personal_info.date_of_birth,
+	Personal_info.civil_status_id,
+	Personal_info.name_of_guardian,
+	Personal_info.home_address,
+	Personal_history.smoking,
+	Personal_history.allergies,
+	Personal_history.alcohol,
+	Personal_history.medication_taken,
+	Personal_history.drugs,
+	Pulmonary.cough,
+	Pulmonary.dyspnea,
+	Pulmonary.hemoptysis,
+	Pulmonary.tb_exposure,
+	Gut.frequency,
+	Gut.flank_plan,
+	Gut.discharge,
+	Gut.dysuria,
+	Gut.nocturia,
+	Gut.dec_urine_amount,
+	Illness.asthma,
+	Illness.ptb,
+	Illness.heart_problem,
+	Illness.hepatitis_a_b,
+	Illness.chicken_pox,
+	Illness.mumps,
+	Illness.typhoid_fever,
+	Cardiac.chest_pain,
+	Cardiac.palpitations,
+	Cardiac.pedal_edema,
+	Cardiac.orthopnea,
+	Cardiac.nocturnal_dyspnea,
+	Neurologic.headache,
+	Neurologic.seizure,
+	Neurologic.dizziness,
+	Neurologic.loss_of_consciousness
+FROM Patient, Personal_info, Personal_history, Pulmonary, Gut, Illness, Cardiac, Neurologic
+Where Patient.school_id = par_schoolId AND Personal_info.school_id = Patient.personal_info_id AND Personal_history.school_id = Patient.personal_history_id AND Pulmonary.school_id = Patient.pulmonary_id AND Gut.school_id = Patient.gut_id AND
+      Illness.school_id = Patient.illness_id AND Cardiac.school_id = Patient.cardiac_id AND Neurologic.school_id = Patient.neurologic_id;
 
+$$
+LANGUAGE 'sql';
 
-
-
-
-
-
-
-
-
-
-
-
-
+--Select show_patient(20131288);
